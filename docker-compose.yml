@@ -1,0 +1,45 @@
+version: "2.3"
+# Stack prefix: calculator
+# Port prefix: 3186
+#
+# We need this so that we don't get name or port collisions when connecting multiple
+# stacks to the same network.
+services:
+  app:
+    container_name: "${NETWORK:-development}-calculator-api"
+    mem_limit: 756m
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      DB_HOST: db
+    depends_on:
+      - db
+    ports:
+      - "${PORT_PREFIX:-3}1860:9393"
+    volumes:
+      - .:/app:cached
+      - bundle:/usr/local/bundle
+    networks:
+      - default
+      - farmdrop
+    stdin_open: true
+    tty: true
+    command: ["thor", "app", "server"]
+  db:
+    container_name: "${NETWORK:-development}-calculator-db"
+    image: postgres:11.2
+    ports:
+      - "${PORT_PREFIX:-3}1861:5432"
+    volumes:
+      - postgresdata:/var/lib/postgresql/data
+    networks:
+      - default
+      - farmdrop
+volumes:
+  bundle:
+  postgresdata:
+networks:
+  farmdrop:
+    external:
+      name: "farmdrop-${NETWORK:-development}"
