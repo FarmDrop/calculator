@@ -17,6 +17,7 @@ namespace :db do
   task :setup do
     Rake::Task['db:create'].execute
     Rake::Task['db:migrate'].execute
+    Rake::Task['db:seed'].execute
     Rake::Task['db:test:create'].execute
     Rake::Task['db:test:prepare'].execute
   end
@@ -128,6 +129,7 @@ namespace :db do
         label: Faker::Movie.quote
       )
     end
+    puts 'Db seeded'
   end
 
   namespace :generate do

@@ -2,7 +2,7 @@
 
 Treat this exercise as you would a real-life business problem. You can ask for clarification of any domain name or rule. If the business requirement is not clear, assume you have access to a business owner to answer your questions.
 
-There is **no** requirement to complete this exercise, we are more looking at your thought process & how you appraoch the problem.
+There is **no** requirement to complete this exercise, we are more looking at your thought process & how you approach the problem.
 
 ## The problem
 
@@ -22,6 +22,9 @@ Build an application that returns itemised billing for an order.
 A seperate order service will send you the required data, so the application should accept `line_items` and a `delivery_slot_id`. Based on this an itemised bill should be returned.
 
 There is already a postgres database populated with a `delivery_slots` and `delivery_costs` table. You can see the details of the tables at `db/structure.sql` 
+
+A `delivery_slot` can have multiple `delivery_costs`. The `delivery_cost` defines the minimum spend, and the cost to charge if that minimum spend is met. If a delivery cost is not found we can assume
+the cost is `0`.
 
 This is the structure for `line_items`:
 
@@ -54,7 +57,7 @@ Given the following data was sent from the order service:
 ]
 ```
 
-and a delivery slot id which allows us to retrieve the following delivery cost record in the database
+and a delivery slot id was also provided, allowing us to which allows us to retrieve the following `delivery_cost` record in the database
 
 ```ruby
 delivery_slot_id: 342344
@@ -63,7 +66,7 @@ delivery_slot_id: 342344
   id: 343424,
   delivery_slot_id: 342344,
   cost_pence: 100,
-  minimum_spend_pence: 500
+  minimum_spend_pence: 500,
   label: "£1 delivery when you spend over £5"
 }
 ```
@@ -85,8 +88,7 @@ Run the following commands to setup the application.
 ```
 docker-compose build
 docker-compose up
-rake db:migrate
-rake db:seed
+rake db:setup
 ```
 
 ## Standard installation
