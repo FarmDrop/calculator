@@ -1,6 +1,8 @@
 # frozen_string_literal: true
-
 require 'bundler/setup'
+
+require 'dotenv'
+Dotenv.load
 
 require 'calculator/initializers/constants'
 

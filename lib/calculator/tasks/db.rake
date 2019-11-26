@@ -1,16 +1,11 @@
 # frozen_string_literal: true
-
-require 'calculator/initializers/constants'
 require 'active_support/core_ext/string/inflections'
-require 'sequel'
+require 'sequel/core'
 require 'shellwords'
 require 'faker'
+require "pry"
 
 Sequel.extension :migration, :core_extensions
-
-def database
-  @database ||= Constants.db
-end
 
 namespace :db do
   desc 'Setup database'
@@ -28,7 +23,7 @@ namespace :db do
       puts 'rake db:create is disabled in this environment'
       next
     end
-    db_url = "postgres://postgres:secret@#{ENV['DB_HOST']}:5432/postgres"
+    db_url = ENV.fetch('INITIAL_DB_CONNECTION') + ENV.fetch('INITIAL_DB_TABLE')
     Sequel.connect(db_url) do |db|
       db.extension :pg_enum
       db.execute('DROP DATABASE IF EXISTS orders;')
@@ -37,10 +32,22 @@ namespace :db do
     puts 'Db created'
   end
 
+  task :migrate, [:version] do |_t, args|
+    version = args[:version].to_i if args[:version]
+    Sequel.connect(ENV.fetch('DATABASE_URL')) do |db|
+      db.extension :pg_enum
+      Sequel::Migrator.run(db, 'db/migrate', target: version)
+    end
+    Rake::Task['db:structure:dump'].execute
+    Rake::Task['db:version'].execute
+    puts 'Db migrated'
+  end
+
   desc 'Dump database data into db/dump.sql'
   task :dump do
+    database_url = ENV.fetch('DATABASE_URL')
     system(
-      %(pg_dump -O #{Shellwords.escape(database.url)}
+      %(pg_dump -O #{Shellwords.escape(database_url)}
         --column-inserts
         --data-only > db/dump.sql
       )
@@ -67,11 +74,10 @@ namespace :db do
   namespace :structure do
     desc 'Dump database structure to db/structure.sql'
     task :dump do
+      database_url = ENV.fetch('DATABASE_URL')
       if system('which pg_dump', out: File::NULL)
         system(
-          %(pg_dump -s -x -O
-            #{Shellwords.escape(database.url)} > db/structure.sql
-          )
+          %(pg_dump -s -x -O #{database_url} > db/structure.sql)
         )
       end
     end
@@ -79,36 +85,15 @@ namespace :db do
 
   desc 'Prints current schema version'
   task :version do
-    version = if database.tables.include?(:schema_migrations)
-                database[:schema_migrations].order(:filename).last[:filename]
-              else
-                'not available'
-              end
+    Sequel.connect(ENV['DATABASE_URL']) do |db|
+      version = if db.tables.include?(:schema_migrations)
+                  db[:schema_migrations].order(:filename).last[:filename]
+                else
+                  'not available'
+                end
 
-    puts "Schema Version: #{version}"
-  end
-
-  desc 'Run latest migrations'
-  task :migrate do
-    Sequel::Migrator.run(database, 'db/migrate')
-    Rake::Task['db:structure:dump'].execute
-    Rake::Task['db:version'].execute
-    puts 'Db migrated'
-  end
-
-  desc 'Rollback latest migration'
-  task :rollback do
-    version = if database.tables.include?(:schema_info)
-                database[:schema_info].first[:version]
-              else
-                0
-              end
-
-    target = version.zero? ? 0 : (version - 1)
-
-    Sequel::Migrator.run(database, 'db/migrate', target: target)
-    Rake::Task['db:version'].execute
-    puts 'Db rolled back'
+      puts "Schema Version: #{version}"
+    end
   end
 
   desc 'Seed database'
@@ -164,8 +149,7 @@ namespace :db do
   namespace :test do
     desc 'Create test database'
     task :create do
-      db_url = "postgres://postgres:secret@#{ENV['DB_HOST']}:5432/postgres"
-      Sequel.connect(db_url) do |db|
+      Sequel.connect(ENV['DATABASE_URL']) do |db|
         db.execute('DROP DATABASE IF EXISTS orders_test;')
         db.execute('CREATE DATABASE orders_test;')
       end
@@ -174,7 +158,7 @@ namespace :db do
 
     desc 'Prepare test database for use'
     task :prepare do
-      db_url = "postgres://postgres:secret@#{ENV['DB_HOST']}:5432/orders_test"
+      db_url = ENV.fetch('INITIAL_DB_CONNECTION') + '/orders_test'
       Sequel.connect(db_url) do |db|
         sql = File.read('db/structure.sql')
         db.execute(sql)
