@@ -87,8 +87,8 @@ Run the following commands to setup the application.
 
 ```
 docker-compose build
+docker-compose run --rm app rake db:setup
 docker-compose up
-rake db:setup
 ```
 
 ## Standard installation
