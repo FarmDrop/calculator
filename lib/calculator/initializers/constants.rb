@@ -11,11 +11,7 @@ class Constants
   Sequel.extension :migration, :core_extensions
 
   def self.database_url
-    db_host = ENV.fetch('DB_HOST', 'localhost')
-    ENV.fetch(
-      'DATABASE_URL',
-      "postgres://postgres:secret@#{db_host}:5432/postgres"
-    )
+    ENV.fetch('DATABASE_URL')
   end
 
   DB = Sequel.connect(database_url)

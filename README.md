@@ -93,7 +93,7 @@ rake db:setup
 
 ## Standard installation
 
-Change the `DB_HOST` variable in `.env` to `localhost`
+Firstly, open the `.env` file, then modify the host portion of the `DATABASE_URL` && `INITIAL_DATABASE_URL` from `db` to `localhost`.
 
 Then run the following commands
 
