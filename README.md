@@ -57,7 +57,7 @@ Given the following data was sent from the order service:
 ]
 ```
 
-and a delivery slot id was also provided, allowing us to which allows us to retrieve the following `delivery_cost` record in the database
+and a delivery slot id was also provided, which allows us to retrieve the following `delivery_cost` record in the database
 
 ```ruby
 delivery_slot_id: 342344
